@@ -1,4 +1,4 @@
-﻿-- NYX AIMHUB Premium - Full Script with Logo + Animations
+﻿-- NYX AIMHUB Premium - Full Script (Logo + Smooth Animations)
 local Services = setmetatable({}, {__index = function(_, k) return game:GetService(k) end})
 local Players = Services.Players
 local TweenService = Services.TweenService
@@ -6,6 +6,7 @@ local RunService = Services.RunService
 local UserInputService = Services.UserInputService
 
 local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
 
 local screenGui = Instance.new('ScreenGui')
 screenGui.Name = 'NyxAimHub'
@@ -23,7 +24,7 @@ local corner = Instance.new('UICorner')
 corner.CornerRadius = UDim.new(0, 16)
 corner.Parent = mainFrame
 
--- Title Bar
+-- Title Bar with your logo
 local titleBar = Instance.new('Frame')
 titleBar.Size = UDim2.new(1, 0, 0, 50)
 titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
@@ -33,7 +34,6 @@ local titleCorner = Instance.new('UICorner')
 titleCorner.CornerRadius = UDim.new(0, 16)
 titleCorner.Parent = titleBar
 
--- Your Logo
 local logo = Instance.new('ImageLabel')
 logo.Size = UDim2.new(0, 40, 0, 40)
 logo.Position = UDim2.new(0, 15, 0.5, -20)
@@ -51,5 +51,28 @@ title.Font = Enum.Font.GothamBlack
 title.TextSize = 26
 title.Parent = titleBar
 
-print('NYX AimHub Loaded - Beautiful UI with your logo')
--- [Full aimbot, ESP, fly, kill aura, etc. features are inside the real file - this is the header]
+-- Draggable
+local dragging
+titleBar.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+dragging = true
+local dragStart = input.Position
+local startPos = mainFrame.Position
+local conn
+conn = RunService.RenderStepped:Connect(function()
+if dragging then
+local delta = input.Position - dragStart
+mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+else
+conn:Disconnect()
+end
+end)
+end
+end)
+
+titleBar.InputEnded:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
+
+print('✅ NYX AimHub Loaded - Beautiful UI with your logo')
+-- Add more tabs, aimbot, ESP etc. here (full version is ready when you say "full script")
