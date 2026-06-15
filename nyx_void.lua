@@ -1,12 +1,9 @@
-﻿-- NYX VOID - Premium Universal Roblox Script (Fixed & Stable)
--- Works on Xeno, Delta, Wave, Solara, etc.
+﻿-- NYX VOID - Premium Universal Roblox Script (Stable & Locked)
 -- Loadstring: loadstring(game:HttpGet('https://raw.githubusercontent.com/yespleaselet2-create/AimHub/main/nyx_void.lua'))()
 
-local Services = setmetatable({}, {__index = function(_, k) return game:GetService(k) end})
+local Services = setmetatable({}, {__index = function(s, k) return game:GetService(k) end})
 local Players = Services.Players
-local TweenService = Services.TweenService
 local RunService = Services.RunService
-local UserInputService = Services.UserInputService
 
 local player = Players.LocalPlayer
 
@@ -16,11 +13,13 @@ if getgenv().NyxVoidLoaded then
 end
 getgenv().NyxVoidLoaded = true
 
--- Safe GUI Creation
+-- Safe GUI Parent
+local guiParent = player:FindFirstChild('PlayerGui') or game:GetService('CoreGui')
+
 local screenGui = Instance.new('ScreenGui')
 screenGui.Name = 'NyxVoid'
 screenGui.ResetOnSpawn = false
-screenGui.Parent = (player:FindFirstChild('PlayerGui') or game:GetService('CoreGui'))
+screenGui.Parent = guiParent
 
 local mainFrame = Instance.new('Frame')
 mainFrame.Size = UDim2.new(0, 820, 0, 560)
@@ -85,9 +84,9 @@ titleBar.InputEnded:Connect(function(input)
     end
 end)
 
-print('✅ NYX VOID Loaded Successfully - Stable Version')
+print('✅ NYX VOID Loaded Successfully - Stable & Locked In')
 
--- Unload Button
+-- Unload
 local unload = Instance.new('TextButton')
 unload.Size = UDim2.new(0, 90, 0, 32)
 unload.Position = UDim2.new(1, -100, 0, 12)
@@ -99,6 +98,6 @@ unload.Parent = titleBar
 
 unload.MouseButton1Click:Connect(function()
     screenGui:Destroy()
-    getgenv().NyxVoidLoaded = false
+    getgenv().NyxVoidLoaded = nil
     print('NYX VOID Unloaded')
 end)
