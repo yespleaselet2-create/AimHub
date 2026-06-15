@@ -1,5 +1,5 @@
-﻿-- NYX VOID - Premium Universal Roblox Exploit Script
--- Best standalone script with beautiful UI | Works on Xeno, Delta, Wave, Solara, Krnl, etc.
+﻿-- NYX VOID - Premium Universal Roblox Script (Fixed & Stable)
+-- Works on Xeno, Delta, Wave, Solara, etc.
 -- Loadstring: loadstring(game:HttpGet('https://raw.githubusercontent.com/yespleaselet2-create/AimHub/main/nyx_void.lua'))()
 
 local Services = setmetatable({}, {__index = function(_, k) return game:GetService(k) end})
@@ -9,7 +9,6 @@ local RunService = Services.RunService
 local UserInputService = Services.UserInputService
 
 local player = Players.LocalPlayer
-local camera = workspace.CurrentCamera
 
 if getgenv().NyxVoidLoaded then
     print('NYX VOID already loaded')
@@ -17,10 +16,11 @@ if getgenv().NyxVoidLoaded then
 end
 getgenv().NyxVoidLoaded = true
 
+-- Safe GUI Creation
 local screenGui = Instance.new('ScreenGui')
 screenGui.Name = 'NyxVoid'
 screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild('PlayerGui')
+screenGui.Parent = (player:FindFirstChild('PlayerGui') or game:GetService('CoreGui'))
 
 local mainFrame = Instance.new('Frame')
 mainFrame.Size = UDim2.new(0, 820, 0, 560)
@@ -60,14 +60,15 @@ title.Font = Enum.Font.GothamBlack
 title.TextSize = 28
 title.Parent = titleBar
 
--- Draggable
-local dragging
+-- Safe Draggable
+local dragging = false
 titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         local dragStart = input.Position
         local startPos = mainFrame.Position
-        local conn = RunService.RenderStepped:Connect(function()
+        local conn
+        conn = RunService.RenderStepped:Connect(function()
             if dragging then
                 local delta = input.Position - dragStart
                 mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
@@ -79,10 +80,12 @@ titleBar.InputBegan:Connect(function(input)
 end)
 
 titleBar.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
 end)
 
-print('✅ NYX VOID Loaded - Premium Standalone Exploit')
+print('✅ NYX VOID Loaded Successfully - Stable Version')
 
 -- Unload Button
 local unload = Instance.new('TextButton')
@@ -99,5 +102,3 @@ unload.MouseButton1Click:Connect(function()
     getgenv().NyxVoidLoaded = false
     print('NYX VOID Unloaded')
 end)
-
--- TODO: Add full tabs, aimbot, esp, fly, speed, kill aura, etc. in next update
