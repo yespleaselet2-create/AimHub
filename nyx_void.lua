@@ -1,15 +1,33 @@
-﻿-- NYX VOID - FIXED SAFE VERSION
+﻿-- NYX VOID - ACTUALLY FIXED VERSION
 print('NYX VOID Starting...')
 
 if getgenv().NyxVoidLoaded then 
     print('Already loaded')
     return 
 end
+
 getgenv().NyxVoidLoaded = true
 
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild('PlayerGui', 5)
+-- FIX 1: Wait for game to be ready
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
+-- FIX 2: Check if player exists BEFORE using it
+local player = game.Players.LocalPlayer
+if not player then
+    warn('Player is nil - script loaded too early')
+    return
+end
+
+-- FIX 3: Wait for PlayerGui with error checking
+local playerGui = player:WaitForChild('PlayerGui', 10)
+if not playerGui then
+    warn('PlayerGui not found')
+    return
+end
+
+-- Rest of code (safe now)
 local sg = Instance.new('ScreenGui')
 sg.Name = 'NyxVoid'
 sg.ResetOnSpawn = false
