@@ -4,11 +4,16 @@ import os
 import json
 import random
 import string
+import base64
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-KEYS_FILE = os.path.join(os.path.dirname(__file__), 'keys.json')
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+KEYS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'keys.json')
+GITHUB_REPO = 'yespleaselet2-create/AimHub'
+GITHUB_FILE = 'keys.json'
 
 def load_keys():
     if not os.path.exists(KEYS_FILE):
@@ -19,6 +24,17 @@ def load_keys():
 def save_keys(keys):
     with open(KEYS_FILE, 'w') as f:
         json.dump(keys, f, indent=2)
+
+def push_keys_to_github(keys):
+    url = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}'
+    headers = {'Authorization': f'token {GITHUB_TOKEN}', 'Content-Type': 'application/json'}
+    get_resp = requests.get(url, headers=headers)
+    sha = get_resp.json().get('sha') if get_resp.status_code == 200 else None
+    content = base64.b64encode(json.dumps(keys, indent=2).encode()).decode()
+    data = {'message': 'Update keys', 'content': content}
+    if sha:
+        data['sha'] = sha
+    requests.put(url, headers=headers, json=data)
 
 def generate_key():
     return 'NYX-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
@@ -50,6 +66,7 @@ async def sendverifypanel(interaction: discord.Interaction):
         key = generate_key()
         keys[user_id] = {'key': key, 'username': str(i.user)}
         save_keys(keys)
+        push_keys_to_github(keys)
         await i.response.send_message(f'✅ Verified! Your key:\n\n`{key}`\n\n**Script:**\n```\nloadstring(game:HttpGet("https://raw.githubusercontent.com/yespleaselet2-create/AimHub/main/nix_hub.lua"))()\n```', ephemeral=True)
 
     button.callback = callback
@@ -74,6 +91,7 @@ async def revokekey(interaction: discord.Interaction, user: discord.Member):
     if user_id in keys:
         del keys[user_id]
         save_keys(keys)
+        push_keys_to_github(keys)
         await interaction.response.send_message(f'✅ Key revoked for {user}', ephemeral=True)
     else:
         await interaction.response.send_message(f'❌ No key found for {user}', ephemeral=True)
