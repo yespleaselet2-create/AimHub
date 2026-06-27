@@ -1,4 +1,4 @@
-﻿-- NIX HUB - Real Key System with Private API
+﻿-- NIX HUB - Real Key System with Private API + Anti-Kick
 print('🔐 NIX HUB Loading...')
 
 if getgenv().NixHubLoaded then
@@ -12,6 +12,31 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild('PlayerGui', 10)
 local HttpService = game:GetService('HttpService')
+local StarterGui = game:GetService('StarterGui')
+
+-- Anti-Kick
+local oldFireServer = Instance.new("RemoteEvent").FireServer
+hookfunction(game.Players.LocalPlayer.Kick, function() end)
+pcall(function()
+    local mt = getrawmetatable(game)
+    local oldIndex = mt.__index
+    local oldNewIndex = mt.__newindex
+    setreadonly(mt, false)
+    mt.__newindex = function(t, k, v)
+        if k == "Kick" then return end
+        return oldNewIndex(t, k, v)
+    end
+    setreadonly(mt, true)
+end)
+
+-- Anti-Disconnect
+pcall(function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("RemoteEvent") and v.Name:lower():find("kick") then
+            v.OnClientEvent:Connect(function() end)
+        end
+    end
+end)
 
 local API_URL = 'http://51.91.165.211:5000/checkkey'
 local API_SECRET = 'NyxSecretAPI2026'
@@ -28,17 +53,26 @@ local function isValidKey(inputKey)
     return data.valid == true
 end
 
+-- GUI Setup
 local keyGui = Instance.new('ScreenGui')
 keyGui.Name = 'NixKeySystem'
 keyGui.ResetOnSpawn = false
-keyGui.Parent = playerGui
+keyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+pcall(function() keyGui.Parent = game:GetService('CoreGui') end)
+if not keyGui.Parent then keyGui.Parent = playerGui end
 
 local keyFrame = Instance.new('Frame')
 keyFrame.Size = UDim2.new(0, 400, 0, 220)
 keyFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
 keyFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+keyFrame.BorderSizePixel = 0
 keyFrame.Parent = keyGui
 Instance.new('UICorner', keyFrame).CornerRadius = UDim.new(0, 12)
+
+local stroke = Instance.new('UIStroke')
+stroke.Color = Color3.fromRGB(255, 100, 200)
+stroke.Thickness = 2
+stroke.Parent = keyFrame
 
 local title = Instance.new('TextLabel')
 title.Size = UDim2.new(1, 0, 0, 50)
@@ -67,15 +101,16 @@ inputBox.TextColor3 = Color3.new(1, 1, 1)
 inputBox.PlaceholderText = 'Paste your NYX-XXXXXXXXXXXX key'
 inputBox.Font = Enum.Font.Gotham
 inputBox.TextSize = 14
+inputBox.ClearTextOnFocus = false
 inputBox.Parent = keyFrame
 Instance.new('UICorner', inputBox).CornerRadius = UDim.new(0, 8)
 
 local verifyBtn = Instance.new('TextButton')
 verifyBtn.Size = UDim2.new(0, 320, 0, 40)
 verifyBtn.Position = UDim2.new(0.5, -160, 0.57, 0)
-verifyBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+verifyBtn.BackgroundColor3 = Color3.fromRGB(150, 100, 255)
 verifyBtn.Text = 'VERIFY'
-verifyBtn.TextColor3 = Color3.new(0, 0, 0)
+verifyBtn.TextColor3 = Color3.new(1, 1, 1)
 verifyBtn.Font = Enum.Font.GothamBold
 verifyBtn.TextSize = 16
 verifyBtn.Parent = keyFrame
@@ -103,14 +138,22 @@ function loadHub()
     local hubGui = Instance.new('ScreenGui')
     hubGui.Name = 'NixHub'
     hubGui.ResetOnSpawn = false
-    hubGui.Parent = playerGui
+    hubGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    pcall(function() hubGui.Parent = game:GetService('CoreGui') end)
+    if not hubGui.Parent then hubGui.Parent = playerGui end
 
     local hubFrame = Instance.new('Frame')
-    hubFrame.Size = UDim2.new(0, 500, 0, 400)
-    hubFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+    hubFrame.Size = UDim2.new(0, 500, 0, 420)
+    hubFrame.Position = UDim2.new(0.5, -250, 0.5, -210)
     hubFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    hubFrame.BorderSizePixel = 0
     hubFrame.Parent = hubGui
     Instance.new('UICorner', hubFrame).CornerRadius = UDim.new(0, 12)
+
+    local hubStroke = Instance.new('UIStroke')
+    hubStroke.Color = Color3.fromRGB(255, 100, 200)
+    hubStroke.Thickness = 2
+    hubStroke.Parent = hubFrame
 
     local hubTitle = Instance.new('TextLabel')
     hubTitle.Size = UDim2.new(1, 0, 0, 50)
@@ -122,6 +165,25 @@ function loadHub()
     hubTitle.Parent = hubFrame
     Instance.new('UICorner', hubTitle).CornerRadius = UDim.new(0, 12)
 
+    -- Draggable
+    local dragging, dragStart, startPos
+    hubTitle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = hubFrame.Position
+        end
+    end)
+    game:GetService('UserInputService').InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            hubFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    game:GetService('UserInputService').InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+
     local function makeButton(text, color, pos)
         local btn = Instance.new('TextButton')
         btn.Size = UDim2.new(0, 200, 0, 40)
@@ -131,17 +193,18 @@ function loadHub()
         btn.TextColor3 = Color3.new(1, 1, 1)
         btn.Font = Enum.Font.GothamBold
         btn.TextSize = 14
+        btn.BorderSizePixel = 0
         btn.Parent = hubFrame
         Instance.new('UICorner', btn).CornerRadius = UDim.new(0, 8)
         return btn
     end
 
     local aimbotActive = false
-    local aimbotBtn = makeButton('🎯 AIMBOT: OFF', Color3.fromRGB(100, 200, 100), UDim2.new(0.1, 0, 0.18, 0))
+    local aimbotBtn = makeButton('🎯 AIMBOT: OFF', Color3.fromRGB(80, 180, 80), UDim2.new(0.1, 0, 0.18, 0))
     aimbotBtn.MouseButton1Click:Connect(function()
         aimbotActive = not aimbotActive
         aimbotBtn.Text = aimbotActive and '🎯 AIMBOT: ON' or '🎯 AIMBOT: OFF'
-        aimbotBtn.BackgroundColor3 = aimbotActive and Color3.fromRGB(200, 100, 100) or Color3.fromRGB(100, 200, 100)
+        aimbotBtn.BackgroundColor3 = aimbotActive and Color3.fromRGB(200, 80, 80) or Color3.fromRGB(80, 180, 80)
     end)
 
     local speedActive = false
@@ -149,6 +212,7 @@ function loadHub()
     speedBtn.MouseButton1Click:Connect(function()
         speedActive = not speedActive
         speedBtn.Text = speedActive and '⚡ SPEED: ON' or '⚡ SPEED: OFF'
+        speedBtn.BackgroundColor3 = speedActive and Color3.fromRGB(200, 80, 80) or Color3.fromRGB(100, 150, 255)
         if speedActive and player.Character then
             player.Character.Humanoid.WalkSpeed = 50
         elseif player.Character then
@@ -157,10 +221,52 @@ function loadHub()
     end)
 
     local wallActive = false
-    local wallBtn = makeButton('👁️ WALLHACK: OFF', Color3.fromRGB(200, 100, 200), UDim2.new(0.1, 0, 0.33, 0))
+    local wallBtn = makeButton('👁️ WALLHACK: OFF', Color3.fromRGB(180, 80, 180), UDim2.new(0.1, 0, 0.33, 0))
     wallBtn.MouseButton1Click:Connect(function()
         wallActive = not wallActive
         wallBtn.Text = wallActive and '👁️ WALLHACK: ON' or '👁️ WALLHACK: OFF'
+        wallBtn.BackgroundColor3 = wallActive and Color3.fromRGB(200, 80, 80) or Color3.fromRGB(180, 80, 180)
+        if wallActive then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA('BasePart') and not v:IsDescendantOf(player.Character) then
+                    v.Material = Enum.Material.ForceField
+                end
+            end
+        else
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA('BasePart') and not v:IsDescendantOf(player.Character) then
+                    v.Material = Enum.Material.SmoothPlastic
+                end
+            end
+        end
+    end)
+
+    local godActive = false
+    local godBtn = makeButton('🛡️ GOD MODE: OFF', Color3.fromRGB(255, 150, 50), UDim2.new(0.55, 0, 0.33, 0))
+    godBtn.MouseButton1Click:Connect(function()
+        godActive = not godActive
+        godBtn.Text = godActive and '🛡️ GOD MODE: ON' or '🛡️ GOD MODE: OFF'
+        godBtn.BackgroundColor3 = godActive and Color3.fromRGB(200, 80, 80) or Color3.fromRGB(255, 150, 50)
+        if godActive and player.Character then
+            player.Character.Humanoid.MaxHealth = math.huge
+            player.Character.Humanoid.Health = math.huge
+        end
+    end)
+
+    -- Close button
+    local closeBtn = Instance.new('TextButton')
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -35, 0, 10)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.Text = 'X'
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.TextSize = 14
+    closeBtn.Parent = hubFrame
+    Instance.new('UICorner', closeBtn).CornerRadius = UDim.new(0, 6)
+    closeBtn.MouseButton1Click:Connect(function()
+        hubGui:Destroy()
+        getgenv().NixHubLoaded = false
     end)
 
     print('✅ NIX Hub loaded!')
