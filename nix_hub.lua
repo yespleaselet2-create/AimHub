@@ -1,4 +1,4 @@
-﻿-- NIX HUB - Real Key System with Private API + Anti-Kick
+﻿-- NIX HUB - Real Key System with Private API
 print('🔐 NIX HUB Loading...')
 
 if getgenv().NixHubLoaded then
@@ -12,31 +12,7 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild('PlayerGui', 10)
 local HttpService = game:GetService('HttpService')
-local StarterGui = game:GetService('StarterGui')
-
--- Anti-Kick
-local oldFireServer = Instance.new("RemoteEvent").FireServer
-hookfunction(game.Players.LocalPlayer.Kick, function() end)
-pcall(function()
-    local mt = getrawmetatable(game)
-    local oldIndex = mt.__index
-    local oldNewIndex = mt.__newindex
-    setreadonly(mt, false)
-    mt.__newindex = function(t, k, v)
-        if k == "Kick" then return end
-        return oldNewIndex(t, k, v)
-    end
-    setreadonly(mt, true)
-end)
-
--- Anti-Disconnect
-pcall(function()
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") and v.Name:lower():find("kick") then
-            v.OnClientEvent:Connect(function() end)
-        end
-    end
-end)
+local UserInputService = game:GetService('UserInputService')
 
 local API_URL = 'http://51.91.165.211:5000/checkkey'
 local API_SECRET = 'NyxSecretAPI2026'
@@ -49,17 +25,19 @@ local function isValidKey(inputKey)
         }), Enum.HttpContentType.ApplicationJson)
     end)
     if not success then return false end
-    local data = HttpService:JSONDecode(result)
+    local ok, data = pcall(function() return HttpService:JSONDecode(result) end)
+    if not ok then return false end
     return data.valid == true
 end
 
--- GUI Setup
 local keyGui = Instance.new('ScreenGui')
 keyGui.Name = 'NixKeySystem'
 keyGui.ResetOnSpawn = false
 keyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 pcall(function() keyGui.Parent = game:GetService('CoreGui') end)
-if not keyGui.Parent then keyGui.Parent = playerGui end
+if not keyGui.Parent or keyGui.Parent ~= game:GetService('CoreGui') then
+    keyGui.Parent = playerGui
+end
 
 local keyFrame = Instance.new('Frame')
 keyFrame.Size = UDim2.new(0, 400, 0, 220)
@@ -140,7 +118,9 @@ function loadHub()
     hubGui.ResetOnSpawn = false
     hubGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     pcall(function() hubGui.Parent = game:GetService('CoreGui') end)
-    if not hubGui.Parent then hubGui.Parent = playerGui end
+    if not hubGui.Parent or hubGui.Parent ~= game:GetService('CoreGui') then
+        hubGui.Parent = playerGui
+    end
 
     local hubFrame = Instance.new('Frame')
     hubFrame.Size = UDim2.new(0, 500, 0, 420)
@@ -165,7 +145,6 @@ function loadHub()
     hubTitle.Parent = hubFrame
     Instance.new('UICorner', hubTitle).CornerRadius = UDim.new(0, 12)
 
-    -- Draggable
     local dragging, dragStart, startPos
     hubTitle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -174,13 +153,13 @@ function loadHub()
             startPos = hubFrame.Position
         end
     end)
-    game:GetService('UserInputService').InputChanged:Connect(function(input)
+    UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
             hubFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
-    game:GetService('UserInputService').InputEnded:Connect(function(input)
+    UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
 
@@ -253,7 +232,6 @@ function loadHub()
         end
     end)
 
-    -- Close button
     local closeBtn = Instance.new('TextButton')
     closeBtn.Size = UDim2.new(0, 30, 0, 30)
     closeBtn.Position = UDim2.new(1, -35, 0, 10)
@@ -262,6 +240,7 @@ function loadHub()
     closeBtn.TextColor3 = Color3.new(1,1,1)
     closeBtn.Font = Enum.Font.GothamBold
     closeBtn.TextSize = 14
+    closeBtn.BorderSizePixel = 0
     closeBtn.Parent = hubFrame
     Instance.new('UICorner', closeBtn).CornerRadius = UDim.new(0, 6)
     closeBtn.MouseButton1Click:Connect(function()
